@@ -15,19 +15,30 @@
 
 ---
 
-## ⚡ Claude Code Skill — Install & Use in 30 Seconds
+## ⚡ One-Command Install
+
+### macOS / Linux
 
 ```bash
-# 1. Install the skill
-mkdir -p ~/.claude/skills && cp -r skills/dual-review ~/.claude/skills/
+curl -fsSL https://raw.githubusercontent.com/zrui9861-dev/dual-agent-sdk/main/install.sh | bash
+```
 
-# 2. Set your second model API key (optional, for dual-model mode)
-export DEEPSEEK_API_KEY="sk-..."    # or OPENAI_API_KEY / DASHSCOPE_API_KEY
+### Windows (PowerShell)
 
-# 3. Use it in Claude Code
-/dual-review "写一个 Redis 分布式锁"
-/dual-review --dual "审查这份安全设计"
-/dual-review --dual --discuss "设计微服务拆分方案"
+```powershell
+Invoke-WebRequest -Uri https://raw.githubusercontent.com/zrui9861-dev/dual-agent-sdk/main/install.ps1 | Invoke-Expression
+```
+
+That's it. Then set your API key and start using:
+
+```bash
+export DEEPSEEK_API_KEY="sk-..."   # pick your provider
+```
+
+```
+/dual-review "你的任务"                     # self-review (free)
+/dual-review --dual "审查这份代码"           # dual-model
+/dual-review --dual --discuss "架构设计"    # discussion
 ```
 
 | Mode | Command | Setup | Best for |
