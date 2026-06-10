@@ -148,9 +148,11 @@ echo '{"task":"...", "claude_position":"...", "disputes":[...]}' | ./scripts/dis
 
 ## Scripts
 
-- `scripts/critique.sh` — Single-round critique (any OpenAI-compatible model)
-- `scripts/discuss.sh` — Multi-turn debate (any OpenAI-compatible model)
-- `scripts/test-critique.sh` — Test the critique pipeline
+- `scripts/critique.sh` — Critique (macOS/Linux bash)
+- `scripts/discuss.sh` — Discuss (macOS/Linux bash)
+- `scripts/critique.ps1` — Critique (Windows PowerShell)
+- `scripts/discuss.ps1` — Discuss (Windows PowerShell)
+- `scripts/test-critique.sh` — Test pipeline
 
 See [CONVERGENCE.md](CONVERGENCE.md) for the full convergence protocol.
 See [EXAMPLES.md](EXAMPLES.md) for usage examples in all modes.
