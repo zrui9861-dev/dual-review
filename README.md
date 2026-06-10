@@ -10,11 +10,55 @@
   <a href="#"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" /></a>
   <a href="#"><img src="https://img.shields.io/badge/code_style-ruff-261230?logo=python" alt="Ruff" /></a>
   <a href="#"><img src="https://img.shields.io/badge/test-vitest-6E9F18?logo=vitest" alt="Vitest" /></a>
+  <a href="#-claude-code-skill"><img src="https://img.shields.io/badge/Claude_Code-skill-8A2BE2?logo=claude" alt="Claude Code Skill" /></a>
 </p>
 
 ---
 
-## Why Dual Agent SDK?
+## ⚡ Claude Code Skill — Install & Use in 30 Seconds
+
+```bash
+# 1. Install the skill
+mkdir -p ~/.claude/skills && cp -r skills/dual-review ~/.claude/skills/
+
+# 2. Set your second model API key (optional, for dual-model mode)
+export DEEPSEEK_API_KEY="sk-..."    # or OPENAI_API_KEY / DASHSCOPE_API_KEY
+
+# 3. Use it in Claude Code
+/dual-review "写一个 Redis 分布式锁"
+/dual-review --dual "审查这份安全设计"
+/dual-review --dual --discuss "设计微服务拆分方案"
+```
+
+| Mode | Command | Setup | Best for |
+|------|---------|-------|----------|
+| Self-review | `/dual-review` | None | Daily work |
+| Dual-model | `--dual` | API key | Important output |
+| Discussion | `--dual --discuss` | API key | Architecture, security |
+
+**Supported second models**: DeepSeek, Qwen, Moonshot, GLM, OpenAI, Anthropic — any OpenAI-compatible API.
+
+### What it looks like
+
+```
+/dual-review --dual --discuss "设计 API 限流方案"
+
+💬 R1 Generate → [Claude 方案]
+🔍 R1 Critique [DeepSeek] → 2 disputes, Score 0.55
+
+💬 R2 Discuss
+| 令牌桶vs滑动窗口 | 🤝 达成共识 |
+| 分布式一致性     | 🔴 仍有分歧 |
+
+💬 R3 Discuss
+| 分布式一致性 | ✅ 解决 (10%超限+熔断) |
+
+✅ Converged — Agreement 0.40→0.85
+```
+
+---
+
+## 📦 SDK — For Building Your Own Agents
 
 Single-agent AI systems have fundamental weaknesses that make them unreliable for production workloads:
 
