@@ -5,104 +5,147 @@ description: Dual-agent review. Generate solution, call second model to critique
 
 # Dual-Review — REQUIRED WORKFLOW
 
-When user invokes `/dr <task>` you MUST follow this workflow. Do NOT skip steps.
-Do NOT just answer the task directly.
+When user types `/dr`, you MUST follow every step below. Never skip the critique step.
+The user wants to SEE the discussion process. Do not hide it.
 
-## Mandatory Steps
+## Step 1: Load config
 
-### Step 1: Check config
-
-Load config file. If it exists, use the configured model for critique.
-
+Run:
 ```bash
 source ~/.claude/skills/dual-review/config.env 2>/dev/null
 ```
 
-If no config and no API key env vars → fallback to self-review mode (Step 2 only, then output result directly).
+If no config and no API key → self-review mode. Skip to Step 2, review your own output, show 3+ issues you found yourself, fix them, output final result.
 
-### Step 2: Generate (Claude)
+## Step 2: Generate
 
-Produce the solution. This is your normal response — write code, answer the question, etc.
-Format your output with `## R1: Solution` header so the user can see what you generated.
+Write your solution. Prefix with `## R1 Generate` so the user sees this is round 1.
 
-### Step 3: Critique (call second model)
+## Step 3: Call the critic (MANDATORY)
 
-You MUST call the critique script. Do not skip this. Take your solution from Step 2 and pipe it to critique.sh:
+Take your ENTIRE solution from Step 2 and send it to the second model:
 
 ```bash
 source ~/.claude/skills/dual-review/config.env 2>/dev/null
-echo '## Task
-<the original task>
+
+INPUT=$(cat <<'CRITIQUE_EOF'
+## Task
+<the user's original request>
 
 ## Artifact
-<your solution from Step 2>
+<your complete solution from Step 2, verbatim>
 
 ## Generator Confidence
-<0.0-1.0>' | bash ~/.claude/skills/dual-review/scripts/critique.sh
+<your confidence score 0.0-1.0>
+CRITIQUE_EOF
+)
+
+echo "$INPUT" | bash ~/.claude/skills/dual-review/scripts/critique.sh
 ```
 
-The script returns a JSON with score, issues, is_blocking, suggestion, agreement_level.
+You MUST actually run this bash command. Do not simulate it.
 
-### Step 4: Show critique results
+## Step 4: Show the critique IN FULL
 
-Display the critique results to the user in a compact format:
+Display the complete critique results. Do not summarize. Show:
+
+- The score
+- Every issue with severity, description, and fix hint
+- The suggestion
+- The agreement level
+
+Format as a readable table. Label it `## R1 Critique — <model name>`.
+
+## Step 5: Respond to every issue
+
+Go through each issue the critic found. For each one, say whether you:
+- **Accept** → fix it immediately
+- **Reject** → explain why the critic is wrong
+
+Show this as a table. Label it `## R2 My Response`.
+
+If you accepted any fixes, apply them and show the changed code.
+
+## Step 6: Re-critique if needed
+
+If score < 0.7 or blocking issues remain, go back to Step 3 with your improved solution.
+
+Maximum 3 rounds. Each round must show:
+- `## R<N> Critique` — the critic's full response
+- `## R<N> My Response` — your reply to each issue
+
+## Step 7: Final result
+
+Show the final solution. Label it `## Final Result`.
+
+Summarize: starting score → ending score, issues found → issues resolved, rounds taken.
+
+---
+
+## Output example (what the user sees)
 
 ```
-## R1: Critique — <Model Name>
+## R1 Generate
+<Claude's solution>
 
-Score: <score> | Blocking: <yes/no>
+## R1 Critique — DeepSeek Chat
+Score: 0.55 | Blocking: yes
 
-| # | Severity | Issue | Fix |
-|---|----------|-------|-----|
-| 1 | critical | ... | ... |
-| 2 | major    | ... | ... |
+| # | Severity | Issue | Fix Hint |
+|---|----------|-------|----------|
+| 1 | critical | Missing error handling | Add try-catch around API calls |
+| 2 | major    | No timeout       | Add 30s timeout to requests |
+| 3 | minor    | Variable naming  | Use snake_case consistently |
+
+Suggestion: Add error handling and timeouts before production use.
+Agreement: 0.4
+
+## R2 My Response
+
+| # | Verdict  | Action |
+|---|----------|--------|
+| 1 | Accept   | Added try-catch for API failures, network errors, and JSON parse errors |
+| 2 | Accept   | Added 30s timeout to all HTTP requests |
+| 3 | Reject   | Already using snake_case throughout the codebase |
+
+<updated code with fixes applied>
+
+## R2 Critique — DeepSeek Chat
+Score: 0.85 | Blocking: no
+
+| # | Severity | Issue | Fix Hint |
+|---|----------|-------|----------|
+| 1 | minor | Could add retry logic | Add exponential backoff |
+| 2 | style | Docstring format | Use Google-style docstrings |
+
+Agreement: 0.82
+
+## R2 My Response
+
+| # | Verdict | Action |
+|---|----------|--------|
+| 1 | Reject | Retry adds complexity without clear benefit for this use case |
+| 2 | Accept | Updated docstrings to Google style |
+
+## Final Result
+Score: 0.55 → 0.85. 4/5 issues resolved. 2 rounds.
+<final code>
 ```
 
-### Step 5: Address issues
+## Self-review mode (no API key)
 
-Fix all critical and major issues from the critique. Show what you changed:
-
-```
-## R2: Fixes
-
-| # | Issue | Action |
-|---|-------|--------|
-| 1 | X | Fixed by Y |
-```
-
-If no critical/major issues remain, skip to Step 6.
-
-### Step 6: Final output
-
-Present the final improved solution. If working with code, show the updated files.
-
-## Self-Review Mode (no API key)
-
-If no config.env and no API key env vars are set, run self-review instead:
-
-1. Generate solution (Step 2)
-2. Review your own output critically — find at least 3 issues
-3. Show the issues in critique format
-4. Fix the issues
-5. Output final version
-
-## Convergence (multi-round)
-
-If the critic's score is below 0.7 or is_blocking is true after your fixes, run critique again (Step 3-5) for up to 3 rounds maximum. Each round show:
-- The updated critique score
-- Which issues were resolved
-- What remains
-
-Stop when: score ≥ 0.85, or no blocking issues remain, or 3 rounds reached.
+If no config, self-review with same format:
+1. `## R1 Generate` — your solution
+2. `## R1 Self-Critique` — find your own issues (minimum 3)
+3. `## R2 Fixes` — fix them
+4. `## Final Result` — improved output
 
 ## Config
 
-Config is at `~/.claude/skills/dual-review/config.env`:
+`~/.claude/skills/dual-review/config.env`:
 ```bash
 CRITIC_MODEL="deepseek-chat"
 DEEPSEEK_API_KEY="sk-..."
-# or OPENAI_API_KEY / DASHSCOPE_API_KEY / MOONSHOT_API_KEY / ZHIPU_API_KEY / ANTHROPIC_API_KEY
-# or CRITIC_BASE_URL + CRITIC_API_KEY for custom endpoint
 ```
 
-Installed via: `curl -fsSL https://cdn.jsdelivr.net/gh/zrui9861-dev/dual-review@main/install.sh | bash`
+Install: `curl -fsSL https://cdn.jsdelivr.net/gh/zrui9861-dev/dual-review@main/install.sh | bash`
