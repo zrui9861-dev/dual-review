@@ -1,16 +1,41 @@
-# macOS
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+*.so
+.Python
+uv.lock
+
+# TypeScript / Node.js
+node_modules/
+dist/
+.cache/
+*.tsbuildinfo
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
 .DS_Store
+Thumbs.db
 
 # Environment
 .env
 .env.local
 .env.*.local
 
-# Temp
-*.swp
-*.swo
-*~
+# Coverage
+coverage/
+*.lcov
+.nyc_output/
 
-# IDE
-.vscode/
-.idea/
+# Misc
+*.log
