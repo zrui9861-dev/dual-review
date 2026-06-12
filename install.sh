@@ -53,7 +53,6 @@ FILES=(
     "EXAMPLES.md"
     "scripts/critique.sh"
     "scripts/discuss.sh"
-    "scripts/test-critique.sh"
 )
 
 FAILED=0
