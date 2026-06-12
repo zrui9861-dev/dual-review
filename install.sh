@@ -5,293 +5,257 @@
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/zrui9861-dev/dual-agent-sdk/main/install.sh | bash
 #
-# What it does:
-#   1. Creates ~/.claude/skills/dual-review/
-#   2. Downloads SKILL.md + scripts
-#   3. Asks for model name + API key → writes config.env
-#   4. Done
+# Steps:
+#   1. Download skill files (with progress + size)
+#   2. Choose model + enter API key
+#   3. Write config, done
 # ============================================================================
 
-set -euo pipefail
+set -u
 
 REPO="https://raw.githubusercontent.com/zrui9861-dev/dual-agent-sdk/main/skills/dual-review"
 SKILL_DIR="${HOME}/.claude/skills/dual-review"
 SCRIPT_DIR="${SKILL_DIR}/scripts"
 CONFIG_FILE="${SKILL_DIR}/config.env"
 
-# --- Colors ---
-BOLD="\033[1m"
-CYAN="\033[0;36m"
-GREEN="\033[0;32m"
-YELLOW="\033[0;33m"
-RED="\033[0;31m"
-RESET="\033[0m"
-
-# --- Ensure stdin is the terminal (not the pipe) for interactive prompts ---
-TTY="${TTY:-/dev/tty}"
+BOLD="$(printf '\033[1m')"
+CYAN="$(printf '\033[0;36m')"
+GREEN="$(printf '\033[0;32m')"
+YELLOW="$(printf '\033[0;33m')"
+RED="$(printf '\033[0;31m')"
+RESET="$(printf '\033[0m')"
 
 echo ""
-echo -e "${BOLD}Dual-Review Skill Installer${RESET}"
-echo "==============================="
+echo "${BOLD}=== Dual-Review Skill Installer ===${RESET}"
 echo ""
 
-# Detect OS
 case "$(uname -s)" in
-    Darwin)  OS="macOS" ;;
-    Linux)   OS="Linux" ;;
-    *)       OS="Unknown" ;;
+    Darwin) OS="macOS" ;;
+    Linux)  OS="Linux" ;;
+    *)      OS="Unknown" ;;
 esac
 
-echo -e "OS:     ${CYAN}${OS}${RESET}"
-echo -e "Dir:    ${CYAN}${SKILL_DIR}${RESET}"
+echo "OS:  ${OS}"
+echo "Dir: ${SKILL_DIR}"
 
-# Create directories
 mkdir -p "${SKILL_DIR}" "${SCRIPT_DIR}"
 
-# Download skill files
+# =============================================================================
+# Step 1/3: Download files
+# =============================================================================
 echo ""
-echo "Downloading..."
+echo "${BOLD}Step 1/3: Downloading files${RESET}"
+echo ""
 
-download() {
-    local name="$1"
-    local url="$2"
-    local dest="$3"
-    printf "  %-30s" "${name}"
-    if curl -fL --progress-bar "${url}" -o "${dest}" 2>&1; then
-        echo -e " ${GREEN}OK${RESET}"
+FILES=(
+    "SKILL.md"
+    "CONVERGENCE.md"
+    "EXAMPLES.md"
+    "scripts/critique.sh"
+    "scripts/discuss.sh"
+    "scripts/test-critique.sh"
+)
+
+FAILED=0
+for file in "${FILES[@]}"; do
+    url="${REPO}/${file}"
+    dest="${SKILL_DIR}/${file}"
+
+    printf "  %-28s " "${file}"
+
+    # Get file size first
+    size=$(curl -fsLI "${url}" 2>/dev/null | grep -i content-length | tail -1 | awk '{print $2}' | tr -d '\r')
+    if [[ -n "$size" ]]; then
+        size_kb=$((size / 1024))
+        [[ $size_kb -lt 1 ]] && size_kb=1
     else
-        echo -e " ${RED}FAIL${RESET}"
-        echo -e "  ${RED}Error: ${url}${RESET}"
-        return 1
+        size_kb="?"
     fi
-}
 
-download "SKILL.md"               "${REPO}/SKILL.md"               "${SKILL_DIR}/SKILL.md"
-download "CONVERGENCE.md"         "${REPO}/CONVERGENCE.md"         "${SKILL_DIR}/CONVERGENCE.md"
-download "EXAMPLES.md"            "${REPO}/EXAMPLES.md"            "${SKILL_DIR}/EXAMPLES.md"
-download "scripts/critique.sh"    "${REPO}/scripts/critique.sh"    "${SCRIPT_DIR}/critique.sh"
-download "scripts/discuss.sh"     "${REPO}/scripts/discuss.sh"     "${SCRIPT_DIR}/discuss.sh"
-download "scripts/test-critique.sh" "${REPO}/scripts/test-critique.sh" "${SCRIPT_DIR}/test-critique.sh"
-chmod +x "${SCRIPT_DIR}"/*.sh
+    # Download with progress bar
+    if curl -fL --progress-bar "${url}" -o "${dest}" 2>&1; then
+        echo -e "${GREEN}OK${RESET} (${size_kb} KB)"
+    else
+        echo -e "${RED}FAIL${RESET}"
+        FAILED=$((FAILED + 1))
+    fi
+done
 
-# Check deps
-echo ""
-echo "Checking dependencies..."
+chmod +x "${SCRIPT_DIR}"/*.sh 2>/dev/null || true
 
-MISSING=""
-command -v curl >/dev/null 2>&1 || MISSING="${MISSING} curl"
-command -v jq   >/dev/null 2>&1 || MISSING="${MISSING} jq"
-
-if [[ -n "$MISSING" ]]; then
-    echo -e "Missing:${RED}${MISSING}${RESET}"
+if [[ $FAILED -gt 0 ]]; then
     echo ""
-    if [[ "$OS" == "macOS" ]]; then
-        echo "  Fix: brew install jq"
-    elif [[ "$OS" == "Linux" ]]; then
-        echo "  Fix: sudo apt install curl jq"
-    fi
-else
-    echo -e "curl + jq — ${GREEN}OK${RESET}"
+    echo -e "${RED}${FAILED} file(s) failed to download.${RESET}"
+    echo "Check your network or try again later."
+    echo "You can also clone the repo and run: ./install.sh"
 fi
 
-# =========================================================================
-# Interactive: Model name + API key
-# =========================================================================
+# =============================================================================
+# Step 2/3: Configure model + API key
+# =============================================================================
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo -e "${BOLD}Critic Model Setup${RESET}"
+echo "${BOLD}Step 2/3: Configure model${RESET}"
 echo ""
-echo "The skill needs a second model to review output."
-echo "Enter a model name, or press Enter to skip."
+echo "The skill sends your code to a second model for review."
+echo "Enter a model name below. Common choices:"
 echo ""
-echo "Examples:"
-echo "  deepseek-chat / deepseek-reasoner"
-echo "  qwen-max / qwen-plus"
-echo "  moonshot-v1"
-echo "  glm-4"
-echo "  gpt-4o"
-echo "  claude-sonnet-4-6"
+echo "  ${CYAN}deepseek-chat${RESET}       DeepSeek V3 (cheap, good for review)"
+echo "  ${CYAN}deepseek-reasoner${RESET}   DeepSeek R1 (slower, thorough)"
+echo "  ${CYAN}qwen-max${RESET}            Qwen (Alibaba)"
+echo "  ${CYAN}moonshot-v1${RESET}         Moonshot / Kimi"
+echo "  ${CYAN}glm-4${RESET}               Zhipu / ChatGLM"
+echo "  ${CYAN}gpt-4o${RESET}              OpenAI"
+echo "  ${CYAN}claude-sonnet-4-6${RESET}   Anthropic"
 echo ""
 
-# --- Ask for model name (reads from /dev/tty so it works when piped) ---
-MODEL_ID=""
-printf "${BOLD}Model: ${RESET}" > "${TTY}"
+TTY="${TTY:-/dev/tty}"
+
+printf "${BOLD}Model name: ${RESET}" > "${TTY}"
 read -r MODEL_ID < "${TTY}"
 
-if [[ -z "$MODEL_ID" ]]; then
+if [[ -z "${MODEL_ID}" ]]; then
     echo ""
-    echo -e "${YELLOW}Skipped. Edit ${CONFIG_FILE} later.${RESET}"
+    echo -e "${YELLOW}Skipped. You can edit ${CONFIG_FILE} later.${RESET}"
 else
-    echo -e "  ${GREEN}${MODEL_ID}${RESET}"
+    echo "${MODEL_ID}"
 
-    # Auto-detect provider from model prefix
-    MODEL_LOWER="$(echo "$MODEL_ID" | tr '[:upper:]' '[:lower:]')"
+    # Auto-detect provider
+    MODEL_LOWER="$(echo "${MODEL_ID}" | tr '[:upper:]' '[:lower:]')"
 
-    case "$MODEL_LOWER" in
+    case "${MODEL_LOWER}" in
         deepseek-*)
-            PROVIDER_NAME="DeepSeek"
-            DEFAULT_API_URL="https://api.deepseek.com/v1/chat/completions"
+            PROVIDER="DeepSeek"
             ENV_VAR="DEEPSEEK_API_KEY"
             KEY_URL="https://platform.deepseek.com/api_keys"
             ;;
         qwen-*|tongyi-*)
-            PROVIDER_NAME="Qwen (DashScope)"
-            DEFAULT_API_URL="https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions"
+            PROVIDER="Qwen (DashScope)"
             ENV_VAR="DASHSCOPE_API_KEY"
             KEY_URL="https://dashscope.console.aliyun.com/apiKey"
             ;;
         moonshot-*|kimi-*)
-            PROVIDER_NAME="Moonshot/Kimi"
-            DEFAULT_API_URL="https://api.moonshot.cn/v1/chat/completions"
+            PROVIDER="Moonshot/Kimi"
             ENV_VAR="MOONSHOT_API_KEY"
             KEY_URL="https://platform.moonshot.cn/console/api-keys"
             ;;
         glm-*|zhipu-*|chatglm-*)
-            PROVIDER_NAME="Zhipu/GLM"
-            DEFAULT_API_URL="https://open.bigmodel.cn/api/paas/v4/chat/completions"
+            PROVIDER="Zhipu/GLM"
             ENV_VAR="ZHIPU_API_KEY"
             KEY_URL="https://open.bigmodel.cn/usercenter/apikeys"
             ;;
         gpt-*|o1-*|o3-*|o4-*)
-            PROVIDER_NAME="OpenAI"
-            DEFAULT_API_URL="https://api.openai.com/v1/chat/completions"
+            PROVIDER="OpenAI"
             ENV_VAR="OPENAI_API_KEY"
             KEY_URL="https://platform.openai.com/api-keys"
             ;;
         claude-*)
-            PROVIDER_NAME="Anthropic"
-            DEFAULT_API_URL="https://api.anthropic.com/v1/messages"
+            PROVIDER="Anthropic"
             ENV_VAR="ANTHROPIC_API_KEY"
             KEY_URL="https://console.anthropic.com/settings/keys"
             ;;
         *)
-            PROVIDER_NAME=""
-            DEFAULT_API_URL=""
+            PROVIDER=""
             ENV_VAR="CRITIC_API_KEY"
             KEY_URL=""
             ;;
     esac
 
-    if [[ -n "$PROVIDER_NAME" ]]; then
-        echo -e "  Provider: ${CYAN}${PROVIDER_NAME}${RESET}"
+    if [[ -n "${PROVIDER}" ]]; then
+        echo -e "  -> ${CYAN}${PROVIDER}${RESET}"
     else
-        echo -e "  ${YELLOW}Unknown provider — need API endpoint.${RESET}"
-    fi
-
-    API_URL=""
-    if [[ -z "$DEFAULT_API_URL" ]]; then
+        echo -e "  -> ${YELLOW}Unknown provider${RESET}"
         echo ""
-        printf "${BOLD}API URL: ${RESET}" > "${TTY}"
-        read -r API_URL < "${TTY}"
-        if [[ -n "$API_URL" ]]; then
-            echo -e "  ${GREEN}${API_URL}${RESET}"
+        printf "${BOLD}API endpoint URL: ${RESET}" > "${TTY}"
+        read -r CUSTOM_URL < "${TTY}"
+        if [[ -n "${CUSTOM_URL}" ]]; then
+            echo "${CUSTOM_URL}"
         fi
-    else
-        API_URL="$DEFAULT_API_URL"
     fi
 
-    # --- Ask for API key ---
+    # --- API key ---
     echo ""
-    if [[ -n "$PROVIDER_NAME" ]]; then
-        echo -e "${BOLD}${PROVIDER_NAME} API key${RESET}"
-    else
-        echo -e "${BOLD}API key${RESET}"
-    fi
-    if [[ -n "$KEY_URL" ]]; then
-        echo -e "  Get one: ${CYAN}${KEY_URL}${RESET}"
-    fi
+    echo "${BOLD}Step 3/3: API key${RESET}"
     echo ""
 
-    printf "${BOLD}Key (hidden): ${RESET}" > "${TTY}"
-
-    API_KEY_VALUE=""
-    if [[ "${OS}" == "macOS" ]] || [[ "${OS}" == "Linux" ]]; then
-        stty -echo < "${TTY}" 2>/dev/null || true
-        read -r API_KEY_VALUE < "${TTY}"
-        stty echo < "${TTY}" 2>/dev/null || true
-        echo ""
-    else
-        read -r API_KEY_VALUE < "${TTY}"
+    if [[ -n "${PROVIDER}" ]]; then
+        echo "  Provider: ${PROVIDER}"
     fi
+    if [[ -n "${KEY_URL}" ]]; then
+        echo "  Get key:  ${CYAN}${KEY_URL}${RESET}"
+    fi
+    echo ""
 
-    if [[ -z "$API_KEY_VALUE" ]]; then
-        echo ""
-        echo -e "${YELLOW}No key entered. Add it later in ${CONFIG_FILE}${RESET}"
+    printf "${BOLD}API key (hidden input): ${RESET}" > "${TTY}"
+
+    stty -echo < "${TTY}" 2>/dev/null || true
+    read -r API_KEY_VALUE < "${TTY}"
+    stty echo < "${TTY}" 2>/dev/null || true
+    echo ""
+
+    if [[ -z "${API_KEY_VALUE}" ]]; then
+        echo -e "${YELLOW}No key entered. Edit ${CONFIG_FILE} later.${RESET}"
     else
         MASKED="${API_KEY_VALUE:0:8}...${API_KEY_VALUE: -4}"
         echo -e "  ${GREEN}${MASKED}${RESET}"
     fi
 fi
 
-# Write config.env
+# =============================================================================
+# Write config
+# =============================================================================
 echo ""
 if [[ -n "${MODEL_ID:-}" ]] && [[ -n "${API_KEY_VALUE:-}" ]]; then
     if [[ -f "${CONFIG_FILE}" ]]; then
         cp "${CONFIG_FILE}" "${CONFIG_FILE}.bak"
-        echo -e "${YELLOW}Backed up: config.env.bak${RESET}"
     fi
 
     cat > "${CONFIG_FILE}" << EOF
-# Dual-Review Skill Configuration
+# Dual-Review Skill Config
 # Generated: $(date '+%Y-%m-%d %H:%M:%S')
-# Load: source ${CONFIG_FILE}
 
 CRITIC_MODEL="${MODEL_ID}"
 EOF
 
-    if [[ -z "${DEFAULT_API_URL:-}" ]] && [[ -n "${API_URL:-}" ]]; then
-        echo "CRITIC_BASE_URL=\"${API_URL}\"" >> "${CONFIG_FILE}"
+    if [[ -n "${CUSTOM_URL:-}" ]]; then
+        echo "CRITIC_BASE_URL=\"${CUSTOM_URL}\"" >> "${CONFIG_FILE}"
     fi
 
     cat >> "${CONFIG_FILE}" << EOF
 
 ${ENV_VAR}="${API_KEY_VALUE}"
-
-# CRITIC_MAX_TOKENS=4096
-# CRITIC_TEMPERATURE=0.3
-# DISCUSS_MAX_ROUNDS=5
 EOF
 
     chmod 600 "${CONFIG_FILE}"
     echo -e "${GREEN}Config saved: ${CONFIG_FILE}${RESET}"
 
     # Auto-load in shell profile
-    SHELL_PROFILE=""
-    [[ -f "${HOME}/.zshrc" ]] && SHELL_PROFILE="${HOME}/.zshrc"
-    [[ -f "${HOME}/.bashrc" ]] && SHELL_PROFILE="${HOME}/.bashrc"
-
-    if [[ -n "$SHELL_PROFILE" ]]; then
-        SOURCE_LINE="source ${CONFIG_FILE} 2>/dev/null  # dual-review"
-        if ! grep -qF "dual-review" "$SHELL_PROFILE" 2>/dev/null; then
-            echo "" >> "$SHELL_PROFILE"
-            echo "$SOURCE_LINE" >> "$SHELL_PROFILE"
-            echo -e "Auto-loaded in ${CYAN}${SHELL_PROFILE}${RESET}"
+    SRC="source ${CONFIG_FILE} 2>/dev/null  # dual-review"
+    for rc in "${HOME}/.zshrc" "${HOME}/.bashrc"; do
+        if [[ -f "${rc}" ]]; then
+            if ! grep -qF "dual-review" "${rc}" 2>/dev/null; then
+                echo "" >> "${rc}"
+                echo "${SRC}" >> "${rc}"
+                echo "Auto-loaded in ${rc}"
+            fi
         fi
-    fi
+    done
 else
-    echo -e "${YELLOW}Config skipped. Edit ${CONFIG_FILE} to set up.${RESET}"
+    echo -e "${YELLOW}Skipped. Edit ${CONFIG_FILE} to configure.${RESET}"
 fi
 
-# Done
 echo ""
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-echo -e "${GREEN}Installed: ${SKILL_DIR}${RESET}"
 echo ""
-
-if [[ -n "${MODEL_ID:-}" ]] && [[ -n "${API_KEY_VALUE:-}" ]]; then
-    echo "Usage:"
-    echo "  /dual-review \"task\""
-    echo "  /dual-review --dual \"task\""
-    echo "  /dual-review --dual --discuss \"task\""
-else
-    echo "First set an API key, then:"
-    echo "  /dual-review \"task\""
-    echo "  /dual-review --dual \"task\""
-    echo "  /dual-review --dual --discuss \"task\""
-fi
-
+echo -e "${GREEN}Done.${RESET} Files installed to: ${SKILL_DIR}"
 echo ""
-echo -e "Docs: ${CYAN}https://github.com/zrui9861-dev/dual-agent-sdk${RESET}"
+echo "Usage in Claude Code:"
+echo "  /dual-review \"task\""
+echo "  /dual-review --dual \"task\""
+echo "  /dual-review --dual --discuss \"task\""
 echo ""
-echo -e "Re-run this script to change config."
+echo "Self-review mode works without any API key."
+echo "Dual-model mode needs the key you just configured."
+echo ""
+echo "Re-run this script to change model or key."
 echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"

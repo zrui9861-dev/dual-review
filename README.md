@@ -15,9 +15,9 @@
 
 ---
 
-## ⚡ One-Command Install (with built-in setup wizard)
+## One-Command Install
 
-The installer now guides you through model selection and API key entry — **everything in one step**. No manual `export` needed.
+Run this. It downloads files, then asks for your model and API key. Done in 3 steps.
 
 ### macOS / Linux
 
@@ -31,23 +31,25 @@ curl -fsSL https://raw.githubusercontent.com/zrui9861-dev/dual-agent-sdk/main/in
 Invoke-WebRequest -Uri https://raw.githubusercontent.com/zrui9861-dev/dual-agent-sdk/main/install.ps1 | Invoke-Expression
 ```
 
-### What happens during install
-
-1. Downloads all skill files
-2. **Prompts you to select a model** (DeepSeek, Qwen, Moonshot, GLM, OpenAI, Anthropic, or Custom)
-3. **Prompts for your API key** (with a link to get one)
-4. **Writes `config.env` automatically** — scripts load it on every run
-5. **Auto-adds sourcing to your shell profile** (`.zshrc` / `.bashrc` / PowerShell profile)
-
-That's it — start using immediately:
+### What happens
 
 ```
-/dual-review "你的任务"                     # self-review (free)
-/dual-review --dual "审查这份代码"           # dual-model
-/dual-review --dual --discuss "架构设计"    # discussion
+Step 1/3: Downloading files   (with progress bars + file sizes)
+Step 2/3: Configure model     (type a model name like deepseek-chat)
+Step 3/3: API key             (hidden input, auto-detects provider)
 ```
 
-> 💡 To change your model or API key later: re-run the installer or edit `~/.claude/skills/dual-review/config.env`
+Config is written to `~/.claude/skills/dual-review/config.env` and auto-loaded in your shell profile.
+
+Start using:
+
+```
+/dual-review "task"                     # self-review (free)
+/dual-review --dual "task"              # dual-model review
+/dual-review --dual --discuss "task"    # multi-turn debate
+```
+
+Re-run the installer to change model or key.
 
 | Mode | Command | Setup | Best for |
 |------|---------|-------|----------|
