@@ -24,6 +24,14 @@
 
 set -euo pipefail
 
+# --- Source config file if present -----------------------------------------
+# This allows the install script to persist user's model choice and API key.
+CONFIG_ENV="${HOME}/.claude/skills/dual-review/config.env"
+if [[ -f "${CONFIG_ENV}" ]]; then
+    # shellcheck source=/dev/null
+    source "${CONFIG_ENV}"
+fi
+
 # --- Config ----------------------------------------------------------------
 MODEL="${CRITIC_MODEL:-deepseek-chat}"
 MAX_TOKENS="${CRITIC_MAX_TOKENS:-4096}"

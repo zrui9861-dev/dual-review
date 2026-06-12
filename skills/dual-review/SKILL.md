@@ -135,6 +135,22 @@ echo '{"task":"...", "claude_position":"...", "disputes":[...]}' | ./scripts/dis
 
 ## Configuration
 
+Configuration is automatically written by the installer. Setup is a one-step process:
+1. Run the installer → select model → enter API key
+2. Config is saved to `~/.claude/skills/dual-review/config.env`
+3. Scripts auto-load it on every run
+
+### Manual configuration
+
+Edit `~/.claude/skills/dual-review/config.env`:
+
+```bash
+CRITIC_MODEL="deepseek-chat"
+DEEPSEEK_API_KEY="sk-..."
+```
+
+Or set environment variables directly:
+
 | Env Var | Purpose | Default |
 |----------|---------|---------|
 | `DEEPSEEK_API_KEY` | DeepSeek API key | — |
@@ -142,6 +158,7 @@ echo '{"task":"...", "claude_position":"...", "disputes":[...]}' | ./scripts/dis
 | `MOONSHOT_API_KEY` | Moonshot/Kimi API key | — |
 | `ZHIPU_API_KEY` | Zhipu/GLM API key | — |
 | `OPENAI_API_KEY` | OpenAI API key | — |
+| `ANTHROPIC_API_KEY` | Anthropic API key | — |
 | `CRITIC_MODEL` | Second model name | `deepseek-chat` |
 | `CRITIC_BASE_URL` | Custom API endpoint (any OpenAI-compatible) | — |
 | `DISCUSS_MAX_ROUNDS` | Max debate rounds (discuss mode) | `5` |

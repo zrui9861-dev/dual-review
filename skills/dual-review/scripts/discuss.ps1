@@ -12,6 +12,15 @@ param(
     [double]$Temperature = 0.3
 )
 
+# --- Source config file if present -----------------------------------------
+$ConfigFile = "$env:USERPROFILE\.claude\skills\dual-review\config.ps1"
+if (Test-Path $ConfigFile) {
+    . $ConfigFile
+    # Re-bind parameters that may have been set by config
+    if (-not $Model -and $env:CRITIC_MODEL) { $Model = $env:CRITIC_MODEL }
+    if (-not $BaseUrl -and $env:CRITIC_BASE_URL) { $BaseUrl = $env:CRITIC_BASE_URL }
+}
+
 $input_json = $input | Out-String
 if (-not $Model) { $Model = "deepseek-chat" }
 

@@ -28,6 +28,13 @@
 
 set -euo pipefail
 
+# --- Source config file if present -----------------------------------------
+CONFIG_ENV="${HOME}/.claude/skills/dual-review/config.env"
+if [[ -f "${CONFIG_ENV}" ]]; then
+    # shellcheck source=/dev/null
+    source "${CONFIG_ENV}"
+fi
+
 MODEL="${CRITIC_MODEL:-deepseek-chat}"
 MAX_TOKENS="${CRITIC_MAX_TOKENS:-2048}"
 TEMPERATURE="${CRITIC_TEMPERATURE:-0.3}"
