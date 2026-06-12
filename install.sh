@@ -128,7 +128,7 @@ else
             ENV_VAR="DEEPSEEK_API_KEY"
             KEY_URL="https://platform.deepseek.com/api_keys"
             ;;
-        qwen-*|tongyi-*)
+        qwen-*|qwen[0-9]*|tongyi-*)
             PROVIDER="Qwen (DashScope)"
             ENV_VAR="DASHSCOPE_API_KEY"
             KEY_URL="https://dashscope.console.aliyun.com/apiKey"
