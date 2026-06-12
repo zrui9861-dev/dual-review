@@ -8,22 +8,21 @@ description: Dual-agent review protocol. Three modes: (1) Self-review — Claude
 ## Quick start
 
 ```
-/dr                     → Claude asks what to review
-/dr <task>              → dual-model review (if key configured), otherwise self-review
-/dr discuss <task>      → multi-turn debate for complex problems
+/dr    给你要审查的内容
 ```
 
-That's it. One command. No flags to remember.
+就这一条命令。Claude 自动选择模式：配了 key 用双模型审查，没配 key 自审查，复杂问题自动多轮辩论。
 
 ## Three Modes
 
-### Mode 1: Self-Review (no key needed)
-Claude generates, then self-critiques. Used when no API key configured.
+### Mode 1: Self-Review (no key)
+Claude 自己审查自己。没配 key 时默认。
 
-### Mode 2: Dual-Model (needs key)
-Claude generates → second model critiques. Default mode when key is configured.
+### Mode 2: Dual-Model (with key)
+Claude 生成，另一个模型审查。配了 key 默认用这个。
 
-### Mode 3: Discussion ← for big problems
+### Mode 3: Discussion (auto)
+遇到复杂问题 Claude 自动开启多轮辩论，不需要手动指定。
 
 Two models **debate** until they agree. Not just one critique — they go back and forth:
 

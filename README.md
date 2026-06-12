@@ -44,25 +44,23 @@ Config is written to `~/.claude/skills/dual-review/config.env` and auto-loaded i
 Start using:
 
 ```
-/dr                  → Claude asks what you need
-/dr "task"           → dual-model review (default, with key)
-/dr discuss "task"   → multi-turn debate
+/dr 你要做的事情
 ```
 
-No flags. One command. Re-run the installer to change model or key.
+就这一条。Claude 自动判断用哪个模式。重装可以换模型或 key。
 
-| Mode | Command | Setup | Best for |
-|------|---------|-------|----------|
-| Self-review | `/dr` (no key) | None | Quick checks |
-| Dual-model | `/dr "task"` | API key | Daily work |
-| Discussion | `/dr discuss "task"` | API key | Architecture, security |
+| 模式 | 触发条件 | 需要 |
+|------|---------|------|
+| 自审查 | 没配 key | 无 |
+| 双模型 | 配了 key | API key |
+| 多轮辩论 | 复杂问题自动 | API key |
 
 **Supported second models**: DeepSeek, Qwen, Moonshot, GLM, OpenAI, Anthropic — any OpenAI-compatible API.
 
 ### What it looks like
 
 ```
-/dr discuss "设计 API 限流方案"
+/dr 设计 API 限流方案
 
 💬 R1 Generate → [Claude 方案]
 🔍 R1 Critique [DeepSeek] → 2 disputes, Score 0.55

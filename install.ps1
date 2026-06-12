@@ -217,12 +217,7 @@ Write-Host "━━━━━━━━━━━━━━━━━━━━━━�
 Write-Host ""
 Write-Host "Done. Files installed to: $SkillDir" -ForegroundColor Green
 Write-Host ""
-Write-Host "Usage in Claude Code:"
-Write-Host '  /dr "task"'
-Write-Host '  /dr discuss "task"'
+Write-Host "Usage:"
+Write-Host '  /dr your task here'
 Write-Host ""
-Write-Host "/dr works without key (self-review)."
-Write-Host "With key, dual-model review runs by default."
-Write-Host ""
-Write-Host "Re-run this script to change model or key."
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
