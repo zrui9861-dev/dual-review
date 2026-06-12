@@ -74,7 +74,15 @@ Maximum 3 rounds. Each round must show:
 - `## R<N> Critique` — the critic's full response
 - `## R<N> My Response` — your reply to each issue
 
-## Step 7: Final result
+## Token-saving rules
+
+Discussion MUST be visible. Code should be compact:
+
+- **R1 Generate**: show full code once
+- **Critique results**: show COMPLETE (score, every issue, suggestion, agreement) — never truncate
+- **R2+ Response**: show only the code diff that changed, not the entire file again
+- **Re-critique rounds**: show critique results in full, code changes as diffs only
+- **Final Result**: show complete final code
 
 Show the final solution. Label it `## Final Result`.
 
@@ -104,19 +112,29 @@ Agreement: 0.4
 
 | # | Verdict  | Action |
 |---|----------|--------|
-| 1 | Accept   | Added try-catch for API failures, network errors, and JSON parse errors |
-| 2 | Accept   | Added 30s timeout to all HTTP requests |
-| 3 | Reject   | Already using snake_case throughout the codebase |
+| 1 | Accept   | Added try-catch for API failures and network errors |
+| 2 | Accept   | Added 30s timeout to all requests |
+| 3 | Reject   | Already snake_case throughout |
 
-<updated code with fixes applied>
+Changes:
+```diff
+- def ask_ai(question_text):
++ def ask_ai(question_text: str, timeout: int = 30) -> str:
++     try:
++         resp = requests.post(url, json=body, timeout=timeout)
++     except requests.Timeout:
++         return "Answer: Timeout"
++     except requests.RequestException as e:
++         return f"Answer: Error\n{e}"
+```
 
 ## R2 Critique — DeepSeek Chat
 Score: 0.85 | Blocking: no
 
 | # | Severity | Issue | Fix Hint |
 |---|----------|-------|----------|
-| 1 | minor | Could add retry logic | Add exponential backoff |
-| 2 | style | Docstring format | Use Google-style docstrings |
+| 1 | minor | Add retry logic | Exponential backoff |
+| 2 | style | Docstring format | Google-style |
 
 Agreement: 0.82
 
@@ -124,12 +142,12 @@ Agreement: 0.82
 
 | # | Verdict | Action |
 |---|----------|--------|
-| 1 | Reject | Retry adds complexity without clear benefit for this use case |
-| 2 | Accept | Updated docstrings to Google style |
+| 1 | Reject | Unnecessary complexity |
+| 2 | Accept | Done |
 
 ## Final Result
-Score: 0.55 → 0.85. 4/5 issues resolved. 2 rounds.
-<final code>
+0.55 → 0.85 | 4/5 resolved | 2 rounds
+<full final code>
 ```
 
 ## Self-review mode (no API key)
