@@ -1,13 +1,10 @@
 # Changelog
 
-## [0.1.0] - Unreleased
+## [1.0.0] - 2026-06-12
 
-### Added
-- Core orchestrator with Generator-Critic dual-agent pattern
-- Six-layer anti-loop convergence protocol
-- Semantic loop detector
-- Anthropic and OpenAI adapters (Python + TypeScript)
-- Chain of Responsibility pattern for convergence checks
-- Structured output support via Pydantic (Python) and Zod (TypeScript)
-- Escalation protocol for deadlock resolution
-- Basic examples and documentation
+- One-command install with model setup wizard
+- Free-text model input, auto-detect provider
+- `/dr` shortcut command
+- Support: DeepSeek, Qwen, Moonshot, GLM, OpenAI, Anthropic, custom API
+- macOS/Linux (bash) + Windows (PowerShell) installers
+- Self-review, dual-model, and multi-turn debate modes

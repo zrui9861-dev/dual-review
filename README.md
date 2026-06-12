@@ -1,23 +1,10 @@
-# Dual Agent SDK
+# Dual Review — Claude Code Skill
 
-<p align="center">
-  <strong style="font-size: 1.5em;">🤝 Build self-correcting AI applications with dual-agent collaboration</strong>
-</p>
+让两个 AI 协作审查代码。一个写，一个审，反复辩论直到达成一致。
 
-<p align="center">
-  <a href="#"><img src="https://img.shields.io/badge/python-3.10+-blue?logo=python&logoColor=white" alt="Python 3.10+" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/typescript-5.4+-3178C6?logo=typescript&logoColor=white" alt="TypeScript 5.4+" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/license-MIT-green" alt="MIT License" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/code_style-ruff-261230?logo=python" alt="Ruff" /></a>
-  <a href="#"><img src="https://img.shields.io/badge/test-vitest-6E9F18?logo=vitest" alt="Vitest" /></a>
-  <a href="#-claude-code-skill"><img src="https://img.shields.io/badge/Claude_Code-skill-8A2BE2?logo=claude" alt="Claude Code Skill" /></a>
-</p>
+## 安装
 
----
-
-## One-Command Install
-
-Run this. It downloads files, then asks for your model and API key. Done in 3 steps.
+一行命令，安装过程会引导你选择模型和输入 API key。
 
 ### macOS / Linux
 
@@ -31,288 +18,56 @@ curl -fsSL https://cdn.jsdelivr.net/gh/zrui9861-dev/dual-agent-sdk@main/install.
 Invoke-WebRequest -Uri https://cdn.jsdelivr.net/gh/zrui9861-dev/dual-agent-sdk@main/install.ps1 | Invoke-Expression
 ```
 
-### What happens
+## 使用
+
+装完在 Claude Code 里直接：
 
 ```
-Step 1/3: Downloading files   (with progress bars + file sizes)
-Step 2/3: Configure model     (type a model name like deepseek-chat)
-Step 3/3: API key             (hidden input, auto-detects provider)
+/dr 你要做的事
 ```
 
-Config is written to `~/.claude/skills/dual-review/config.env` and auto-loaded in your shell profile.
-
-Start using:
-
-```
-/dr 你要做的事情
-```
-
-就这一条。Claude 自动判断用哪个模式。重装可以换模型或 key。
+Claude 自动选择模式：
 
 | 模式 | 触发条件 | 需要 |
 |------|---------|------|
 | 自审查 | 没配 key | 无 |
-| 双模型 | 配了 key | API key |
+| 双模型 | 配了 key（默认） | API key |
 | 多轮辩论 | 复杂问题自动 | API key |
 
-**Supported second models**: DeepSeek, Qwen, Moonshot, GLM, OpenAI, Anthropic — any OpenAI-compatible API.
-
-### What it looks like
+## 效果
 
 ```
 /dr 设计 API 限流方案
 
-💬 R1 Generate → [Claude 方案]
-🔍 R1 Critique [DeepSeek] → 2 disputes, Score 0.55
+R1: Claude 方案 → DeepSeek 审查 → 2 个争议, Score 0.55
 
-💬 R2 Discuss
-| 令牌桶vs滑动窗口 | 🤝 达成共识 |
-| 分布式一致性     | 🔴 仍有分歧 |
+R2: 辩论
+  令牌桶 vs 滑动窗口 → 达成共识
+  分布式一致性 → 仍有分歧
 
-💬 R3 Discuss
-| 分布式一致性 | ✅ 解决 (10%超限+熔断) |
+R3: 继续辩论
+  分布式一致性 → 解决 (10%超限 + 熔断)
 
-✅ Converged — Agreement 0.40→0.85
+完成 — 一致性 0.40 → 0.85
 ```
 
----
+## 支持的第二模型
 
-## 📦 SDK — For Building Your Own Agents
+deepseek-chat / deepseek-reasoner / qwen-max / qwen-plus / moonshot-v1 / glm-4 / gpt-4o / claude-sonnet-4-6 / 或任何 OpenAI 兼容 API
 
-Single-agent AI systems have fundamental weaknesses that make them unreliable for production workloads:
+## 怎么工作的
 
-| Problem | Real-World Impact |
-|---|---|
-| **Hallucinations** — no second pair of eyes | Incorrect code, fabricated facts, broken logic |
-| **No self-correction** — models rarely catch their own mistakes | Bugs and vulnerabilities ship to production |
-| **Infinite loops** — agents debate without converging | Wasted tokens, hung pipelines, timeout failures |
+1. **生成** — Claude 产出方案
+2. **审查** — 你选的模型找问题（严重/主要/次要/风格）
+3. **收敛** — 6 层检查防止无限循环，保证终止
+4. **解决** — 接受 / 继续修改 / 升级到裁判一锤定音
 
-**Dual Agent SDK** solves all three with a **Generator-Critic pattern** backed by a **6-layer anti-loop convergence protocol**. One agent creates. Another reviews. A structured orchestrator guarantees the loop terminates -- every time.
+详见 [CONVERGENCE.md](skills/dual-review/CONVERGENCE.md)
 
-```mermaid
-flowchart TD
-    U[User Task] --> G[Generator Agent]
-    G --> A[Artifact + Reasoning]
-    A --> C[Critic Agent]
-    C --> V[Verdict with Issues]
-    V --> O{Orchestrator<br/>6-Layer Check}
-    O -->|L1: Max Rounds| ACCEPT
-    O -->|L2: Quality ≥ Threshold| ACCEPT
-    O -->|L3: Score Converged| ACCEPT
-    O -->|L4: Issues Decaying| ACCEPT
-    O -->|L5: Diminishing ROI| ACCEPT
-    O -->|L6: Semantic Loop?| ESCALATE
-    ESCALATE --> M[Meta-Judge Resolution]
-    O -->|Continue| G
-    ACCEPT --> R[Final Verified Output]
-    M --> R
-```
+## 重装
 
-## Features
-
-| | |
-|---|---|
-| 🧠 **Generator-Critic Pattern** | One model creates with structured reasoning; another rigorously reviews with severity-ranked issues |
-| 🛡️ **6-Layer Anti-Loop Protocol** | Chain of Responsibility pattern. Each layer checks for convergence independently. Guaranteed termination |
-| 🔌 **Multi-Provider Ready** | Anthropic and OpenAI adapters built-in. Bring your own adapter with a 3-method interface |
-| 📊 **Structured Output** | Pydantic models (Python) and Zod schemas (TypeScript) validate every agent response |
-| 🌐 **Dual Ecosystem** | First-class Python and TypeScript packages with identical APIs and behavior |
-| ⚖️ **Escalation Protocol** | Semantic loop detection triggers a meta-judge to resolve deadlocks with a final binding decision |
-| 📈 **Observable** | Full round-by-round audit trail: artifacts, verdicts, issues, confidence scores, and convergence decisions |
-
-## Quick Start
-
-### Python
-
-```bash
-pip install dual-agent-sdk
-```
-
-```python
-import asyncio
-from dual_agent_sdk import (
-    DualAgentOrchestrator,
-    AnthropicAdapter,
-    OpenAIAdapter,
-    AgentConfig,
-)
-
-async def main():
-    orchestrator = DualAgentOrchestrator(
-        generator=AnthropicAdapter(model="claude-sonnet-4-6"),
-        critic=OpenAIAdapter(model="gpt-4o"),
-    )
-
-    result = await orchestrator.run(
-        "Write a secure authentication middleware for FastAPI with JWT verification"
-    )
-
-    print(f"✅ Final result (confidence: {result.confidence:.2f})")
-    print(f"   Rounds: {len(result.rounds)}")
-    print(f"   Decision: {result.decision}")
-    print(f"\n{result.content}")
-
-asyncio.run(main())
-```
-
-### TypeScript
-
-```bash
-npm install dual-agent-sdk
-```
-
-```typescript
-import {
-  DualAgentOrchestrator,
-  AnthropicAdapter,
-  OpenAIAdapter,
-} from 'dual-agent-sdk';
-
-async function main() {
-  const orchestrator = new DualAgentOrchestrator(
-    new AnthropicAdapter({ model: 'claude-sonnet-4-6' }),
-    new OpenAIAdapter({ model: 'gpt-4o' }),
-  );
-
-  const result = await orchestrator.run(
-    'Write a secure authentication middleware for Express with JWT verification',
-  );
-
-  console.log(`✅ Final result (confidence: ${result.confidence.toFixed(2)})`);
-  console.log(`   Rounds: ${result.rounds.length}`);
-  console.log(`   Decision: ${result.decision}`);
-  console.log(`\n${result.content}`);
-}
-
-main();
-```
-
-## How It Works
-
-Each collaboration round follows a disciplined, fully-observable pipeline:
-
-1. **Generate** -- The Generator agent produces an `Artifact` containing the solution, a confidence score, and explicit reasoning.
-2. **Critique** -- The Critic agent reviews the artifact and returns a `Verdict` with issues ranked by severity (`critical`, `major`, `minor`, `style`).
-3. **Converge** -- The Orchestrator runs the verdict through six sequential checks (Chain of Responsibility):
-   - **L1 -- Hard Ceiling**: Have we exceeded `max_rounds`? If so, accept the best artifact so far.
-   - **L2 -- Quality Threshold**: Does the confidence score meet or exceed `quality_threshold`? If so, accept.
-   - **L3 -- Score Convergence**: Is the score delta between rounds below `convergence_threshold`? If so, accept -- we are no longer meaningfully improving.
-   - **L4 -- Severity Decay**: Are critical and major issues trending to zero? If so, accept.
-   - **L5 -- Diminishing ROI**: Is this round's improvement less than `1/roi_decay_factor` of the previous? If so, accept -- further rounds cost more than they are worth.
-   - **L6 -- Semantic Loop Detection**: Are the last two artifacts semantically nearly identical (cosine similarity > `loop_similarity_threshold`)? If so, escalate to the meta-judge.
-4. **Resolve** -- The Orchestrator either **accepts** the artifact, **continues** with filtered feedback sent back to the Generator, or **escalates** a detected deadlock to the meta-judge for a final binding decision.
-
-## Configuration
-
-Every convergence parameter is tunable:
-
-| Parameter | Type | Default | Description |
-|---|---|---|---|
-| `max_rounds` | `int` | `5` | Maximum Generator-Critic round trips |
-| `quality_threshold` | `float` | `0.85` | Auto-accept when confidence >= this value |
-| `convergence_threshold` | `float` | `0.02` | Accept when score delta between rounds < this |
-| `roi_decay_factor` | `float` | `2.0` | Each round must improve at least `1/factor` of the prior |
-| `loop_similarity_threshold` | `float` | `0.92` | Cosine similarity above this triggers escalation |
-| `enable_escalation` | `bool` | `true` | Enable meta-judge resolution on detected deadlocks |
-
-```python
-# Python: custom convergence tuning
-orchestrator = DualAgentOrchestrator(
-    generator=gen,
-    critic=crit,
-    config=AgentConfig(
-        max_rounds=8,
-        quality_threshold=0.90,
-        convergence_threshold=0.01,
-    ),
-)
-```
-
-```typescript
-// TypeScript: custom convergence tuning
-const orchestrator = new DualAgentOrchestrator(gen, crit, {
-  maxRounds: 8,
-  qualityThreshold: 0.9,
-  convergenceThreshold: 0.01,
-});
-```
-
-## Bringing Your Own Adapter
-
-The adapter interface is intentionally minimal. Implement three methods and you can orchestrate any LLM:
-
-```python
-# Python
-class MyAdapter(BaseAdapter):
-    async def generate(self, prompt: str, system_prompt: str) -> str: ...
-    def get_model_name(self) -> str: ...
-    def get_provider_name(self) -> str: ...
-```
-
-```typescript
-// TypeScript
-class MyAdapter extends BaseAdapter {
-  async generate(prompt: string, systemPrompt: string): Promise<string> { ... }
-  getModelName(): string { ... }
-  getProviderName(): string { ... }
-}
-```
-
-See the [Custom Adapters guide](docs/adapters.md) for full examples with error handling, retries, and structured output support.
-
-## Project Structure
-
-```
-dual-agent-sdk/
-├── python/                    # Python package
-│   ├── src/dual_agent_sdk/
-│   │   ├── __init__.py        # Public API exports
-│   │   ├── orchestrator.py    # DualAgentOrchestrator
-│   │   ├── convergence.py     # 6-layer ConvergenceEngine
-│   │   ├── loop_detector.py   # SemanticLoopDetector
-│   │   ├── models.py          # Pydantic models
-│   │   ├── adapters/          # Anthropic, OpenAI, Base
-│   │   └── prompts/           # System prompt templates
-│   ├── tests/
-│   └── pyproject.toml
-├── typescript/                # TypeScript package
-│   ├── src/
-│   │   ├── index.ts           # Public API exports
-│   │   ├── orchestrator.ts    # DualAgentOrchestrator
-│   │   ├── convergence.ts     # 6-layer ConvergenceEngine
-│   │   ├── loop-detector.ts   # SemanticLoopDetector
-│   │   ├── models.ts          # Zod schemas + types
-│   │   ├── adapters/          # Anthropic, OpenAI, Base
-│   │   └── prompts/           # System prompt templates
-│   ├── tests/
-│   └── package.json
-├── docs/
-├── CHANGELOG.md
-├── CODE_OF_CONDUCT.md
-├── CONTRIBUTING.md
-└── LICENSE
-```
-
-## Documentation
-
-| Document | Description |
-|---|---|
-| [Getting Started](docs/getting-started.md) | Installation, first run, basic configuration |
-| [Architecture](docs/architecture.md) | Deep dive into the Generator-Critic pattern and component design |
-| [API Reference](docs/api-reference.md) | Full API docs for orchestrator, convergence engine, adapters, and models |
-| [Convergence Protocol](docs/convergence-protocol.md) | Detailed explanation of the 6-layer anti-loop protocol |
-| [Custom Adapters](docs/adapters.md) | How to build and register custom LLM adapters |
-
-## Contributing
-
-We welcome contributions! Dual Agent SDK is built for the community.
-
-- **🐛 Found a bug?** Open an issue using the [bug report template](.github/ISSUE_TEMPLATE/bug_report.md).
-- **💡 Have an idea?** Open a [feature request](.github/ISSUE_TEMPLATE/feature_request.md).
-- **🔧 Want to code?** Read [CONTRIBUTING.md](CONTRIBUTING.md) and pick a good first issue.
-
-All contributors are expected to follow our [Code of Conduct](CODE_OF_CONDUCT.md).
+重新运行安装脚本即可换模型或 key。或者直接编辑 `~/.claude/skills/dual-review/config.env`
 
 ## License
 
-MIT © 2026 Dual Agent SDK Contributors -- see [LICENSE](LICENSE) for full text.
+MIT
