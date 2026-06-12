@@ -8,21 +8,22 @@ description: Dual-agent review protocol. Three modes: (1) Self-review — Claude
 ## Quick start
 
 ```
-/dual-review <task>                     → self-review (default, no setup)
-/dual-review --dual "<task>"            → dual-model (generate + critique once)
-/dual-review --discuss "<task>"         → discussion (two models debate)
-/dual-review --dual --discuss "<task>"  → dual-model with discussion rounds
+/dr                     → Claude asks what to review
+/dr <task>              → dual-model review (if key configured), otherwise self-review
+/dr discuss <task>      → multi-turn debate for complex problems
 ```
+
+That's it. One command. No flags to remember.
 
 ## Three Modes
 
-### Mode 1: Self-Review
-Claude generates, then self-critiques. No setup needed.
+### Mode 1: Self-Review (no key needed)
+Claude generates, then self-critiques. Used when no API key configured.
 
-### Mode 2: Dual-Model
-Claude generates → second model critiques. `export DEEPSEEK_API_KEY=...`
+### Mode 2: Dual-Model (needs key)
+Claude generates → second model critiques. Default mode when key is configured.
 
-### Mode 3: Discussion (--discuss) ← for big problems
+### Mode 3: Discussion ← for big problems
 
 Two models **debate** until they agree. Not just one critique — they go back and forth:
 

@@ -218,12 +218,11 @@ Write-Host ""
 Write-Host "Done. Files installed to: $SkillDir" -ForegroundColor Green
 Write-Host ""
 Write-Host "Usage in Claude Code:"
-Write-Host '  /dual-review "task"'
-Write-Host '  /dual-review --dual "task"'
-Write-Host '  /dual-review --dual --discuss "task"'
+Write-Host '  /dr "task"'
+Write-Host '  /dr discuss "task"'
 Write-Host ""
-Write-Host "Self-review mode works without any API key."
-Write-Host "Dual-model mode needs the key you just configured."
+Write-Host "/dr works without key (self-review)."
+Write-Host "With key, dual-model review runs by default."
 Write-Host ""
 Write-Host "Re-run this script to change model or key."
 Write-Host "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
