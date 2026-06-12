@@ -2,7 +2,7 @@
 # Dual-Review Skill — One-Line Installer (Windows PowerShell)
 #
 # Usage:
-#   Invoke-WebRequest -Uri https://cdn.jsdelivr.net/gh/zrui9861-dev/dual-agent-sdk@main/install.ps1 | Invoke-Expression
+#   Invoke-WebRequest -Uri https://cdn.jsdelivr.net/gh/zrui9861-dev/dual-review@main/install.ps1 | Invoke-Expression
 #
 # Steps:
 #   1. Download skill files (with progress + size)
@@ -12,7 +12,7 @@
 
 $ErrorActionPreference = "Continue"
 
-$Repo = "https://cdn.jsdelivr.net/gh/zrui9861-dev/dual-agent-sdk@main/skills/dual-review"
+$Repo = "https://cdn.jsdelivr.net/gh/zrui9861-dev/dual-review@main/skills/dual-review"
 $SkillDir = "$env:USERPROFILE\.claude\skills\dual-review"
 $ScriptDir = "$SkillDir\scripts"
 $ConfigFile = "$SkillDir\config.ps1"
