@@ -3,7 +3,7 @@
 # Dual-Review Skill — One-Line Installer (macOS / Linux)
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/zrui9861-dev/dual-agent-sdk/main/install.sh | bash
+#   curl -fsSL https://cdn.jsdelivr.net/gh/zrui9861-dev/dual-agent-sdk@main/install.sh | bash
 #
 # Steps:
 #   1. Download skill files (with progress + size)
@@ -13,7 +13,7 @@
 
 set -u
 
-REPO="https://raw.githubusercontent.com/zrui9861-dev/dual-agent-sdk/main/skills/dual-review"
+REPO="https://cdn.jsdelivr.net/gh/zrui9861-dev/dual-agent-sdk@main/skills/dual-review"
 SKILL_DIR="${HOME}/.claude/skills/dual-review"
 SCRIPT_DIR="${SKILL_DIR}/scripts"
 CONFIG_FILE="${SKILL_DIR}/config.env"

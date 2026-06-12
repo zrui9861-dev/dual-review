@@ -22,13 +22,13 @@ Run this. It downloads files, then asks for your model and API key. Done in 3 st
 ### macOS / Linux
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/zrui9861-dev/dual-agent-sdk/main/install.sh | bash
+curl -fsSL https://cdn.jsdelivr.net/gh/zrui9861-dev/dual-agent-sdk@main/install.sh | bash
 ```
 
 ### Windows (PowerShell)
 
 ```powershell
-Invoke-WebRequest -Uri https://raw.githubusercontent.com/zrui9861-dev/dual-agent-sdk/main/install.ps1 | Invoke-Expression
+Invoke-WebRequest -Uri https://cdn.jsdelivr.net/gh/zrui9861-dev/dual-agent-sdk@main/install.ps1 | Invoke-Expression
 ```
 
 ### What happens
