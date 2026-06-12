@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
+<title>截图问答</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font:-apple-system-body,sans-serif;background:#000;color:#fff;min-height:100dvh;display:flex;flex-direction:column}
+.top{text-align:center;padding:40px 20px 20px}
+.top h1{font-size:20px;font-weight:600;margin-bottom:4px}
+.top p{color:#888;font-size:14px}
+.preview{flex:1;display:flex;align-items:center;justify-content:center;padding:10px}
+.preview img{max-width:100%;max-height:50vh;border-radius:12px;display:none}
+.placeholder{border:2px dashed #333;border-radius:16px;padding:60px 40px;text-align:center;color:#666;font-size:15px}
+.placeholder .icon{font-size:48px;margin-bottom:12px}
+.btn{display:block;width:calc(100% - 40px);margin:12px 20px;padding:16px;border:none;border-radius:14px;font-size:18px;font-weight:600;cursor:pointer}
+.btn-pick{background:#333;color:#fff}
+.btn-go{background:#34c759;color:#fff;display:none}
+.answer{background:#1c1c1e;margin:0 20px 20px;padding:20px;border-radius:14px;display:none}
+.answer .first{font-size:32px;font-weight:700;color:#34c759;margin-bottom:12px}
+.answer .explain{font-size:15px;color:#999;line-height:1.6;white-space:pre-wrap}
+.status{text-align:center;color:#888;font-size:14px;padding:20px;display:none}
+#file{display:none}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <h1>截图问答</h1>
+  <p>拍题 → AI 回答</p>
+</div>
+
+<div class="preview">
+  <div class="placeholder" id="ph">
+    <div class="icon">📷</div>
+    点下方按钮选择截屏
+  </div>
+  <img id="img" alt="preview">
+</div>
+
+<div class="status" id="st"></div>
+<div class="answer" id="ans">
+  <div class="first" id="ans1"></div>
+  <div class="explain" id="ans2"></div>
+</div>
+
+<input type="file" id="file" accept="image/*" capture="environment">
+
+<button class="btn btn-pick" id="pickBtn" onclick="document.getElementById('file').click()">选择截屏</button>
+<button class="btn btn-go" id="goBtn" onclick="ask()">获取答案</button>
+
+<script>
+const API = 'https://dashscope.aliyuncs.com/compatible-mode/v1/chat/completions'
+const KEY = 'Bearer sk-e25c5958f6af48d3a5dc8f652c1253c1'
+let imgBase64 = ''
+
+document.getElementById('file').onchange = e => {
+  const f = e.target.files[0]
+  if (!f) return
+  const r = new FileReader()
+  r.onload = () => {
+    imgBase64 = r.result.split(',')[1]
+    document.getElementById('img').src = r.result
+    document.getElementById('img').style.display = 'block'
+    document.getElementById('ph').style.display = 'none'
+    document.getElementById('goBtn').style.display = 'block'
+    document.getElementById('ans').style.display = 'none'
+  }
+  r.readAsDataURL(f)
+}
+
+async function ask() {
+  if (!imgBase64) return
+  document.getElementById('goBtn').style.display = 'none'
+  document.getElementById('st').style.display = 'block'
+  document.getElementById('st').textContent = 'AI 思考中...'
+  document.getElementById('ans').style.display = 'none'
+
+  try {
+    const resp = await fetch(API, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'Authorization':KEY},
+      body: JSON.stringify({
+        model: 'qwen-vl-max',
+        messages: [{
+          role: 'user',
+          content: [
+            {type:'image_url',image_url:{url:'data:image/jpeg;base64,'+imgBase64}},
+            {type:'text',text:'这是考试题目截图。给出答案。第一行格式：答案：X。之后3-5行简短解释。不要输出问候语。'}
+          ]
+        }],
+        max_tokens: 500
+      })
+    })
+    const data = await resp.json()
+    const text = data.choices[0].message.content
+    const lines = text.split('\n')
+    const first = lines[0]
+    const rest = lines.slice(1).join('\n')
+
+    document.getElementById('ans1').textContent = first
+    document.getElementById('ans2').textContent = rest
+    document.getElementById('ans').style.display = 'block'
+    document.getElementById('st').style.display = 'none'
+    document.getElementById('goBtn').style.display = 'block'
+    document.getElementById('goBtn').textContent = '再问一题'
+  } catch(e) {
+    document.getElementById('st').textContent = '出错：'+e.message
+    document.getElementById('goBtn').style.display = 'block'
+  }
+}
+</script>
+</body>
+</html>
