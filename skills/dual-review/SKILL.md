@@ -19,15 +19,18 @@ Run this to detect which models the user can actually use:
 ```bash
 source ~/.claude/skills/dual-review/config.env 2>/dev/null
 
-# Check which keys are available
-[[ -n "${DEEPSEEK_API_KEY:-}" ]] && echo "deepseek ✅" && DEEPSEEK_OK=1 || DEEPSEEK_OK=0
-[[ -n "${DASHSCOPE_API_KEY:-}" ]]  && echo "qwen ✅"    && QWEN_OK=1    || QWEN_OK=0
-[[ -n "${OPENAI_API_KEY:-}" ]]     && echo "openai ✅"  && OPENAI_OK=1  || OPENAI_OK=0
-[[ -n "${ANTHROPIC_API_KEY:-}" ]]  && echo "anthropic ✅" && ANTHROPIC_OK=1 || ANTHROPIC_OK=0
-[[ -n "${ZHIPU_API_KEY:-}" ]]      && echo "glm ✅"     && GLM_OK=1     || GLM_OK=0
-[[ -n "${GEMINI_API_KEY:-}" ]]     && echo "gemini ✅"  && GEMINI_OK=1  || GEMINI_OK=0
-[[ -n "${TRAE_API_KEY:-}" ]]       && echo "trae ✅"    && TRAE_OK=1    || TRAE_OK=0
-[[ -n "${WORKBUDDY_API_KEY:-}" ]]  && echo "workbuddy ✅" && WORKBUDDY_OK=1 || WORKBUDDY_OK=0
+# Check which keys are available (including custom CRITIC_API_KEY)
+HAS_ANY_KEY=0
+[[ -n "${DEEPSEEK_API_KEY:-}" ]]  && echo "deepseek ✅"      && HAS_ANY_KEY=1
+[[ -n "${DASHSCOPE_API_KEY:-}" ]] && echo "qwen ✅"         && HAS_ANY_KEY=1
+[[ -n "${OPENAI_API_KEY:-}" ]]    && echo "openai ✅"       && HAS_ANY_KEY=1
+[[ -n "${ANTHROPIC_API_KEY:-}" ]] && echo "anthropic ✅"    && HAS_ANY_KEY=1
+[[ -n "${ZHIPU_API_KEY:-}" ]]     && echo "glm ✅"          && HAS_ANY_KEY=1
+[[ -n "${MOONSHOT_API_KEY:-}" ]]  && echo "moonshot ✅"     && HAS_ANY_KEY=1
+[[ -n "${GEMINI_API_KEY:-}" ]]    && echo "gemini ✅"       && HAS_ANY_KEY=1
+[[ -n "${TRAE_API_KEY:-}" ]]      && echo "trae ✅"         && HAS_ANY_KEY=1
+[[ -n "${WORKBUDDY_API_KEY:-}" ]] && echo "workbuddy ✅"    && HAS_ANY_KEY=1
+[[ -n "${CRITIC_API_KEY:-}" ]]    && echo "custom ✅ (CRITIC_BASE_URL)" && HAS_ANY_KEY=1
 ```
 
 **Step 0b: Show ONLY available models**
