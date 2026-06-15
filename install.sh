@@ -53,6 +53,7 @@ FILES=(
     "EXAMPLES.md"
     "scripts/critique.sh"
     "scripts/discuss.sh"
+    "scripts/generate.sh"
 )
 
 FAILED=0
@@ -105,7 +106,11 @@ echo "  ${CYAN}qwen-max${RESET}            Qwen (Alibaba)"
 echo "  ${CYAN}moonshot-v1${RESET}         Moonshot / Kimi"
 echo "  ${CYAN}glm-4${RESET}               Zhipu / ChatGLM"
 echo "  ${CYAN}gpt-4o${RESET}              OpenAI"
+echo "  ${CYAN}codex-*${RESET}             OpenAI Codex (coding agent)"
 echo "  ${CYAN}claude-sonnet-4-6${RESET}   Anthropic"
+echo "  ${CYAN}gemini-2.5-pro${RESET}      Google Gemini"
+echo "  ${CYAN}trae-*${RESET}              Trae Work (ByteDance)"
+echo "  ${CYAN}workbuddy-*${RESET}         Workbuddy (local/remote agent)"
 echo ""
 
 TTY="${TTY:-/dev/tty}"
@@ -152,6 +157,26 @@ else
             PROVIDER="Anthropic"
             ENV_VAR="ANTHROPIC_API_KEY"
             KEY_URL="https://console.anthropic.com/settings/keys"
+            ;;
+        codex-*)
+            PROVIDER="OpenAI Codex"
+            ENV_VAR="OPENAI_API_KEY"
+            KEY_URL="https://platform.openai.com/api-keys"
+            ;;
+        gemini-*)
+            PROVIDER="Google Gemini"
+            ENV_VAR="GEMINI_API_KEY"
+            KEY_URL="https://aistudio.google.com/apikey"
+            ;;
+        trae-*)
+            PROVIDER="Trae Work (ByteDance)"
+            ENV_VAR="TRAE_API_KEY"
+            KEY_URL="https://trae.ai/dashboard"
+            ;;
+        workbuddy-*)
+            PROVIDER="Workbuddy"
+            ENV_VAR="WORKBUDDY_API_KEY"
+            KEY_URL=""
             ;;
         *)
             PROVIDER=""

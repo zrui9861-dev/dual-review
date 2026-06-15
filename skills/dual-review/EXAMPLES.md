@@ -38,7 +38,93 @@ Agreement: 0.70→0.88 | **Converged** ✅
 
 Claude 分析 + 自审 → Score 0.92, no blocking → L2 触发，一轮结束。
 
-## Example 3: Escalation (deadlock)
+## Example 3: Role Swap — Claude as Reviewer
+
+**User**: `/dr --review "```python\ndef fibonacci(n):\n    if n <= 1:\n        return n\n    return fibonacci(n-1) + fibonacci(n-2)\n```"`
+
+```
+## R1 Review Target
+[user's fibonacci code]
+
+## R1 Critique — Claude
+Score: 0.45 | Blocking: yes
+
+| # | Severity | Issue | Fix Hint |
+|---|----------|-------|----------|
+| 1 | critical | O(2^n) — will hang on n>35 | Add memoization or use iterative |
+| 2 | major    | No type hints | Add type annotations |
+| 3 | minor    | Missing docstring | Add function docstring |
+
+Suggestion: Rewrite with memoization for production use.
+Agreement: 0.6
+
+## R2 My Response
+
+| # | Verdict | Action |
+|---|---------|--------|
+| 1 | Accept  | Added @lru_cache + iterative fallback |
+| 2 | Accept  | Added type hints |
+| 3 | Accept  | Added docstring |
+
+## Final Result
+0.45 → 0.90 | 3/3 resolved | 1 round
+```
+
+## Example 4: External Generate — Claude Reviews
+
+**User**: `/dr --gen deepseek-chat "写一个 Python 异步 HTTP 客户端"`
+
+```
+## R1 Generate — deepseek-chat
+[deepseek's async HTTP client code]
+
+## R1 Critique — Claude
+Score: 0.60 | Blocking: yes
+
+| # | Severity | Issue | Fix Hint |
+|---|----------|-------|----------|
+| 1 | major | Missing connection pooling | Use aiohttp.ClientSession |
+| 2 | major | No retry on 429/5xx | Add tenacity retry decorator |
+| 3 | minor | Timeout not configurable | Add timeout parameter |
+
+Agreement: 0.5
+
+## R2 My Response
+All 3 accepted. Added session pooling, retry, and timeout config.
+
+## Final Result
+0.60 → 0.92 | 3/3 resolved | 1 round
+```
+
+## Example 5: Full External — Two Models, Claude Orchestrates
+
+**User**: `/dr --gen qwen-max --critic deepseek-chat "设计微服务健康检查方案"`
+
+```
+## R1 Generate — qwen-max
+[qwen's health check design with gRPC health protocol]
+
+## R1 Critique — deepseek-chat
+Score: 0.50 | Blocking: yes
+
+| # | Severity | Issue | Fix Hint |
+|---|----------|-------|----------|
+| 1 | major | No circuit breaker integration | Add circuit breaker state |
+| 2 | major | Missing SLA metrics | Add p99 latency tracking |
+
+Agreement: 0.45
+
+## R2 My Response (Claude orchestrator)
+Claude merges: health check + circuit breaker + SLA metrics
+
+## R2 Critique — deepseek-chat
+Score: 0.88 | Blocking: no
+
+## Final Result
+0.50 → 0.88 | 2/2 resolved | 2 rounds | Models: qwen-max (gen) + deepseek-chat (critic)
+```
+
+## Example 6: Escalation (deadlock)
 
 **User**: `/dual-review --dual --discuss "微服务间通信用 gRPC 还是消息队列？"`
 

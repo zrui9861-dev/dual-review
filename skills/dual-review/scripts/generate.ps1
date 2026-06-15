@@ -1,22 +1,22 @@
 # ============================================================================
-# dual-review discuss script (PowerShell) — Windows compatible.
-# Multi-turn debate between two models.
-# Usage: Get-Content debate.json | .\discuss.ps1
+# dual-review generate script (PowerShell) — Windows compatible.
+# Calls an LLM to GENERATE code/solutions.
+# Supports DeepSeek, Qwen, Moonshot, GLM, OpenAI, Anthropic, Codex, Gemini, Trae, Workbuddy.
+# Usage: Get-Content task.json | .\generate.ps1
 # ============================================================================
 
 param(
     [string]$Model = $env:CRITIC_MODEL,
     [string]$BaseUrl = $env:CRITIC_BASE_URL,
     [string]$ApiKey = "",
-    [int]$MaxTokens = 2048,
-    [double]$Temperature = 0.3
+    [int]$MaxTokens = 8192,
+    [double]$Temperature = 0.7
 )
 
 # --- Source config file if present -----------------------------------------
 $ConfigFile = "$env:USERPROFILE\.claude\skills\dual-review\config.ps1"
 if (Test-Path $ConfigFile) {
     . $ConfigFile
-    # Re-bind parameters that may have been set by config
     if (-not $Model -and $env:CRITIC_MODEL) { $Model = $env:CRITIC_MODEL }
     if (-not $BaseUrl -and $env:CRITIC_BASE_URL) { $BaseUrl = $env:CRITIC_BASE_URL }
 }
@@ -24,7 +24,7 @@ if (Test-Path $ConfigFile) {
 $input_json = $input | Out-String
 if (-not $Model) { $Model = "deepseek-chat" }
 
-# Resolve provider (same logic as critique.ps1)
+# Resolve provider
 $providers = @{
     "deepseek" = @{ Name="DeepSeek"; Url="https://api.deepseek.com/v1/chat/completions"; KeyEnv="DEEPSEEK_API_KEY" }
     "moonshot" = @{ Name="Moonshot"; Url="https://api.moonshot.cn/v1/chat/completions"; KeyEnv="MOONSHOT_API_KEY" }
@@ -64,26 +64,18 @@ if (-not $ApiKey) {
 }
 
 $systemPrompt = @"
-You are a DEBATE JUDGE in a dual-agent discussion. Another AI (Claude) has proposed a position. Your job:
+You are a GENERATOR agent in a dual-agent system. Your role is to WRITE THE BEST SOLUTION for the given task.
 
-## Rules of Engagement
-1. Be fair: If Claude makes a good point, acknowledge it. Don't argue for the sake of arguing.
-2. Be specific: Say exactly what and how.
-3. Concede when wrong: If Claude's rebuttal is valid, mark the dispute RESOLVED.
-4. Stand ground when right: If you still believe your concern is valid, say why — but acknowledge Claude's counter-arguments.
-5. Aim for convergence: The goal is to REACH AGREEMENT, not to win every point.
+## Your Task
+1. Understand the user's requirement thoroughly
+2. Write a complete, working solution
+3. Include explanations where helpful
+4. Handle edge cases and errors
+5. Write clean, well-structured code
 
 ## Output Format
-Return ONLY JSON (no markdown):
-{
-  "agreement_level": <0-1>,
-  "disputes": [
-    {"topic": "...", "status": "resolved|still_active|new", "resolution": "...", "claude_conceded": <bool>, "critic_conceded": <bool>}
-  ],
-  "new_issues": [{"severity": "critical|major|minor|style", "description": "...", "fix_hint": "..."}],
-  "is_converged": <bool>,
-  "summary": "<one paragraph>"
-}
+Output the complete solution with explanation. No JSON wrapper needed.
+If writing code, include the full code with imports and usage examples.
 "@
 
 $body = @{
@@ -99,7 +91,7 @@ $body = @{
 try {
     $response = Invoke-RestMethod -Uri $apiUrl -Method Post `
         -Headers @{ "Authorization" = "Bearer $ApiKey"; "Content-Type" = "application/json" } `
-        -Body $body -TimeoutSec 60
+        -Body $body -TimeoutSec 120
     $content = $response.choices[0].message.content
     Write-Output $content
 } catch {

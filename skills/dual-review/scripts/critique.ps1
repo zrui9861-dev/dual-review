@@ -34,6 +34,10 @@ $providers = @{
     "o1"       = @{ Name="OpenAI"; Url="https://api.openai.com/v1/chat/completions"; KeyEnv="OPENAI_API_KEY" }
     "o3"       = @{ Name="OpenAI"; Url="https://api.openai.com/v1/chat/completions"; KeyEnv="OPENAI_API_KEY" }
     "o4"       = @{ Name="OpenAI"; Url="https://api.openai.com/v1/chat/completions"; KeyEnv="OPENAI_API_KEY" }
+    "codex"    = @{ Name="Codex"; Url="https://api.openai.com/v1/chat/completions"; KeyEnv="OPENAI_API_KEY" }
+    "gemini"   = @{ Name="Gemini"; Url="https://generativelanguage.googleapis.com/v1beta/openai/chat/completions"; KeyEnv="GEMINI_API_KEY" }
+    "trae"     = @{ Name="Trae"; Url="https://api.trae.ai/v1/chat/completions"; KeyEnv="TRAE_API_KEY" }
+    "workbuddy"= @{ Name="Workbuddy"; Url="http://127.0.0.1:11434/v1/chat/completions"; KeyEnv="WORKBUDDY_API_KEY" }
 }
 
 $provider = $null

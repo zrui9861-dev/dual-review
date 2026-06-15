@@ -38,6 +38,7 @@ $Files = @(
     @{N="EXAMPLES.md";      U="$Repo/EXAMPLES.md";      D="$SkillDir\EXAMPLES.md"}
     @{N="scripts/critique.ps1"; U="$Repo/scripts/critique.ps1"; D="$ScriptDir\critique.ps1"}
     @{N="scripts/discuss.ps1";  U="$Repo/scripts/discuss.ps1";  D="$ScriptDir\discuss.ps1"}
+    @{N="scripts/generate.ps1"; U="$Repo/scripts/generate.ps1"; D="$ScriptDir\generate.ps1"}
 )
 
 $Failed = 0
@@ -76,7 +77,11 @@ Write-Host "  qwen-max            Qwen (Alibaba)" -ForegroundColor Cyan
 Write-Host "  moonshot-v1         Moonshot / Kimi" -ForegroundColor Cyan
 Write-Host "  glm-4               Zhipu / ChatGLM" -ForegroundColor Cyan
 Write-Host "  gpt-4o              OpenAI" -ForegroundColor Cyan
+Write-Host "  codex-*             OpenAI Codex (coding agent)" -ForegroundColor Cyan
 Write-Host "  claude-sonnet-4-6   Anthropic" -ForegroundColor Cyan
+Write-Host "  gemini-2.5-pro      Google Gemini" -ForegroundColor Cyan
+Write-Host "  trae-*              Trae Work (ByteDance)" -ForegroundColor Cyan
+Write-Host "  workbuddy-*         Workbuddy (local/remote agent)" -ForegroundColor Cyan
 Write-Host ""
 
 $ModelId = Read-Host "Model name"
@@ -122,6 +127,26 @@ if (-not $ModelId) {
         $Provider = "Anthropic"
         $EnvVar = "ANTHROPIC_API_KEY"
         $KeyUrl = "https://console.anthropic.com/settings/keys"
+    }
+    elseif ($ModelLower.StartsWith("codex")) {
+        $Provider = "OpenAI Codex"
+        $EnvVar = "OPENAI_API_KEY"
+        $KeyUrl = "https://platform.openai.com/api-keys"
+    }
+    elseif ($ModelLower.StartsWith("gemini")) {
+        $Provider = "Google Gemini"
+        $EnvVar = "GEMINI_API_KEY"
+        $KeyUrl = "https://aistudio.google.com/apikey"
+    }
+    elseif ($ModelLower.StartsWith("trae")) {
+        $Provider = "Trae Work (ByteDance)"
+        $EnvVar = "TRAE_API_KEY"
+        $KeyUrl = "https://trae.ai/dashboard"
+    }
+    elseif ($ModelLower.StartsWith("workbuddy")) {
+        $Provider = "Workbuddy"
+        $EnvVar = "WORKBUDDY_API_KEY"
+        $KeyUrl = ""
     }
 
     if ($Provider) {
